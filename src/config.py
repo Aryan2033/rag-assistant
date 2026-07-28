@@ -18,3 +18,6 @@ EMBED_DIM = 768
 # Chunking
 WORDS_PER_CHUNK = 350
 CHUNK_OVERLAP = 50
+
+# LLM (local, via Ollama)
+LLM_MODEL = "llama3.2"

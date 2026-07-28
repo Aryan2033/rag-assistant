@@ -9,9 +9,5 @@ data/processed/*
 !data/processed/.gitkeep
 EOF
 
-touch data/raw/.gitkeep data/processed/.gitkeep
-echo "# RAG Assistant — grounded retrieval for international students in Germany" > README.md
 
-git add .
-git commit -m "Day 0: project scaffold, env, Qdrant + Ollama verified"
-git push
+
