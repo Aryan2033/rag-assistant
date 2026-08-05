@@ -8,7 +8,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
-from src.retrieval.dense import search
+from src.retrieval.rerank import rerank_search as search
 from src.generation.llm import generate
 
 SYSTEM = (
