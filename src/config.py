@@ -21,3 +21,6 @@ CHUNK_OVERLAP = 30      # was 50
 
 # LLM (local, via Ollama)
 LLM_MODEL = "llama3.2"
+
+# Reranker (cross-encoder)
+RERANK_MODEL = "BAAI/bge-reranker-v2-m3"  # multilingual, matches your e5 choice
