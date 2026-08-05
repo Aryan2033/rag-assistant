@@ -16,8 +16,8 @@ EMBED_MODEL = "intfloat/multilingual-e5-base"
 EMBED_DIM = 768
 
 # Chunking
-WORDS_PER_CHUNK = 350
-CHUNK_OVERLAP = 50
+WORDS_PER_CHUNK = 150   # was 350 — smaller so a chunk stays within one module block
+CHUNK_OVERLAP = 30      # was 50
 
 # LLM (local, via Ollama)
 LLM_MODEL = "llama3.2"

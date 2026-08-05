@@ -29,7 +29,8 @@ def search(query: str, top_k: int = 5) -> list[dict]:
     client = QdrantClient(url=QDRANT_URL)
     hits = client.query_points(COLLECTION, query=vec, limit=top_k).points
     return [
-        {"score": h.score, "source": h.payload["source"], "text": h.payload["text"]}
+        {"chunk_uid": h.id, "score": h.score,
+         "source": h.payload["source"], "text": h.payload["text"]}
         for h in hits
     ]
 
