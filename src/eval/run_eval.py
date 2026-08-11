@@ -21,6 +21,7 @@ REFUSAL_MARKERS = [
     "no information", "not in the", "cannot find", "can't find", "not available",
     "isn't in", "is not in", "not provided", "there is no", "no such",
     "cannot be found", "can't be found", "could not find", "couldn't find",
+    "does not mention", "doesn't mention", "not mention", "does not contain",
 ]
 
 

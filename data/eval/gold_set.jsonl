@@ -22,7 +22,7 @@
 {"id": "q22", "question": "In which term is Big Data & Data Mining offered?", "ground_truth": "Winter term", "answerable": true, "expected_keywords": ["Winter"], "category": "offered_term"}
 {"id": "q23", "question": "In which term is Machine Learning and Deep Learning offered?", "ground_truth": "Summer term", "answerable": true, "expected_keywords": ["Summer"], "category": "offered_term"}
 {"id": "q24", "question": "Is Advanced Programming with MOSTflexiPL mandatory or elective?", "ground_truth": "Elective", "answerable": true, "expected_keywords": ["Elective"], "category": "module_type"}
-{"id": "q25", "question": "Is Natural Language Processing a mandatory module?", "ground_truth": "Yes, it is mandatory", "answerable": true, "expected_keywords": ["Mandatory"], "category": "module_type"}
+{"id": "q25", "question": "What is the module type of Data Analytics: mandatory or elective?", "ground_truth": "Mandatory", "answerable": true, "expected_keywords": ["Mandatory"], "category": "module_type"}
 {"id": "q26", "question": "What is the module number for Natural Language Processing?", "ground_truth": "56003", "answerable": true, "expected_keywords": ["56003"], "category": "module_number"}
 {"id": "q27", "question": "What is the module number for Big Data & Data Mining?", "ground_truth": "56006", "answerable": true, "expected_keywords": ["56006"], "category": "module_number"}
 {"id": "q28", "question": "What is the email address of the NLP module manager?", "ground_truth": "winfried.bantel@hs-aalen.de", "answerable": true, "expected_keywords": ["winfried.bantel@hs-aalen.de"], "category": "contact"}
