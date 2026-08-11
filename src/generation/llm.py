@@ -19,5 +19,9 @@ def generate(prompt: str, system: str | None = None) -> str:
     if system:
         messages.append({"role": "system", "content": system})
     messages.append({"role": "user", "content": prompt})
-    response = ollama.chat(model=LLM_MODEL, messages=messages)
+    response = ollama.chat(
+        model=LLM_MODEL,
+        messages=messages,
+        options={"temperature": 0},  # deterministic: same input -> same answer
+    )
     return response["message"]["content"]

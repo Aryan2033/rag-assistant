@@ -24,3 +24,7 @@ LLM_MODEL = "llama3.2"
 
 # Reranker (cross-encoder)
 RERANK_MODEL = "BAAI/bge-reranker-v2-m3"  # multilingual, matches your e5 choice
+
+# Evaluation
+EVAL_DIR = PROJECT_ROOT / "data" / "eval"
+GOLD_SET = EVAL_DIR / "gold_set.jsonl"
