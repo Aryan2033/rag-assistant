@@ -100,6 +100,18 @@ def detect_module(question: str) -> dict | None:
 
 def kg_lookup(question: str) -> dict | None:
     """Return {'answer','entity','attribute'} if the KG can answer, else None."""
+    q = question.lower()
+
+    # Guard 1: requirement/prerequisite questions are NOT plain attribute lookups
+    if any(p in q for p in ["required to start", "required to begin", "prerequisite",
+                            "needed to start", "needed to begin", "to be admitted",
+                            "requirement to", "how many cp are required", "credits are required"]):
+        return None
+
+    # Guard 2: the KG has no dates/times — let RAG handle (and correctly refuse)
+    if any(p in q for p in ["date", "when exactly", "what time", "deadline", "calendar"]):
+        return None
+
     module = detect_module(question)
 
     # Remove the module's name from the question so its words (e.g. "Language"
