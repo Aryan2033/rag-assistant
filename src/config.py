@@ -28,3 +28,7 @@ RERANK_MODEL = "BAAI/bge-reranker-v2-m3"  # multilingual, matches your e5 choice
 # Evaluation
 EVAL_DIR = PROJECT_ROOT / "data" / "eval"
 GOLD_SET = EVAL_DIR / "gold_set.jsonl"
+
+# Knowledge graph
+KG_DIR = PROJECT_ROOT / "data" / "kg"
+KG_JSON = KG_DIR / "modules_kg.json"

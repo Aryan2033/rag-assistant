@@ -1,0 +1,134 @@
+[
+  {
+    "number": "28922",
+    "name": "Advanced Programming with MOSTflexiPL",
+    "manager": "Prof. Dr. Heinlein",
+    "email": "christian.heinlein@hs-aalen.de",
+    "credits": "5",
+    "offered": "",
+    "type": "Elective",
+    "language": "English",
+    "exam": "PLP graded 100 %"
+  },
+  {
+    "number": "56001",
+    "name": "Artificial Intelligence",
+    "manager": "Prof. Dr. Dominik Müller",
+    "email": "dominik.mueller@hs-aalen.de",
+    "credits": "5",
+    "offered": "Summer term",
+    "type": "Mandatory",
+    "language": "English",
+    "exam": "PLK 120, graded. Grade of the written examination"
+  },
+  {
+    "number": "56002",
+    "name": "Machine Learning and Deep Learning",
+    "manager": "Prof. Dr. Tim Dahmen",
+    "email": "tim.dahmen@hs-aalen.de",
+    "credits": "5",
+    "offered": "Summer term",
+    "type": "Mandatory",
+    "language": "English",
+    "exam": "PLK, 100%"
+  },
+  {
+    "number": "56003",
+    "name": "Natural Language Processing",
+    "manager": "Prof. Dr. Winfried Bantel",
+    "email": "winfried.bantel@hs-aalen.de",
+    "credits": "5",
+    "offered": "Summer term",
+    "type": "Mandatory",
+    "language": "English",
+    "exam": "PLK (50%) und PLP / PLR (50%)"
+  },
+  {
+    "number": "56004",
+    "name": "Data Analytics",
+    "manager": "Prof. Dr. Tim Dahmen",
+    "email": "tim.dahmen@hs-aalen.de",
+    "credits": "5",
+    "offered": "Winter term",
+    "type": "Mandatory",
+    "language": "English",
+    "exam": "PLK, 100%"
+  },
+  {
+    "number": "56005",
+    "name": "Predictive Analytics",
+    "manager": "Prof. Dr. Martin Heckmann",
+    "email": "martin.heckmann@hs-aalen.de",
+    "credits": "5",
+    "offered": "Winter term",
+    "type": "Mandatory",
+    "language": "English",
+    "exam": "PLK 90, 100%"
+  },
+  {
+    "number": "56006",
+    "name": "Big Data & Data Mining",
+    "manager": "Prof. Dr. Gregor Grambow",
+    "email": "gregor.grambow@hs-aalen.de",
+    "credits": "5",
+    "offered": "Winter term",
+    "type": "Mandatory",
+    "language": "English",
+    "exam": "PLK 90, 100%"
+  },
+  {
+    "number": "56007",
+    "name": "Seminar",
+    "manager": "program coordinator",
+    "email": "roy.oberhauser@hs-aalen.de",
+    "credits": "5",
+    "offered": "Winter term, Summer term",
+    "type": "Mandatory",
+    "language": "English",
+    "exam": "PLS 50%, PLR 50%, A scientific seminar paper (10-20 pages) must be"
+  },
+  {
+    "number": "56008",
+    "name": "Projekt",
+    "manager": "program coordinator",
+    "email": "roy.oberhauser@hs-aalen.de",
+    "credits": "10",
+    "offered": "Winter term, Summer term",
+    "type": "Mandatory",
+    "language": "English",
+    "exam": "PLP, 100%, A final scientific report must be prepared on the respective"
+  },
+  {
+    "number": "56009",
+    "name": "Kompetenzbereich 1",
+    "manager": "program coordinator",
+    "email": "roy.oberhauser@hs-aalen.de",
+    "credits": "5",
+    "offered": "Winter term, Summer term",
+    "type": "Mandatory",
+    "language": "Englisch",
+    "exam": "According to the specifications of the selected module"
+  },
+  {
+    "number": "56011",
+    "name": "Wahlpflichtmodul",
+    "manager": "program coordinator",
+    "email": "roy.oberhauser@hs-aalen.de",
+    "credits": "5",
+    "offered": "Winter term, Summer term",
+    "type": "Mandatory",
+    "language": "English",
+    "exam": "According to the specifications of the selected module"
+  },
+  {
+    "number": "9999",
+    "name": "Masterarbeit",
+    "manager": "program coordinator",
+    "email": "roy.oberhauser@hs-aalen.de",
+    "credits": "30",
+    "offered": "Winter term, Summer term",
+    "type": "Mandatory",
+    "language": "English",
+    "exam": "PLP, Master Thesis 80%, Colloquium 20%, A written thesis must be pre-"
+  }
+]
