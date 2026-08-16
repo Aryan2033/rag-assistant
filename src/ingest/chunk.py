@@ -10,8 +10,10 @@ import sys
 import uuid
 from pathlib import Path
 
+
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))  # make 'src' importable
 from src.config import DOCUMENTS_JSONL, CHUNKS_JSONL, WORDS_PER_CHUNK, CHUNK_OVERLAP
+from src.ingest.chunk_spo import chunk_spo_text
 
 # Stable namespace so re-running produces the same chunk IDs (no duplicates)
 NAMESPACE = uuid.UUID("6ba7b810-9dad-11d1-80b4-00c04fd430c8")  
@@ -38,8 +40,20 @@ def main() -> None:
 
     docs = [json.loads(line) for line in DOCUMENTS_JSONL.read_text(encoding="utf-8").splitlines()]
     out = []
+    # Documents whose id/source looks like the regulations use section-aware chunking
+    def is_spo(doc: dict) -> bool:
+        tag = (doc["id"] + " " + doc["source"]).lower()
+        # 'examination'/'studies_and' identify the SPO; avoid 'spo' alone
+        # because the handbook filename contains 'SPO31'.
+        return any(k in tag for k in ["examination", "studies_and", "prüfung", "regulation"])
+
     for doc in docs:
-        pieces = chunk_text(doc["text"], WORDS_PER_CHUNK, CHUNK_OVERLAP)
+        if is_spo(doc):
+            pieces = chunk_spo_text(doc["text"])
+            strategy = "section-aware"
+        else:
+            pieces = chunk_text(doc["text"], WORDS_PER_CHUNK, CHUNK_OVERLAP)
+            strategy = "fixed-window"
         for i, piece in enumerate(pieces):
             out.append({
                 "chunk_uid": str(uuid.uuid5(NAMESPACE, f"{doc['id']}:{i}")),
@@ -48,7 +62,7 @@ def main() -> None:
                 "chunk_index": i,
                 "text": piece,
             })
-        print(f"{doc['id']}: {len(pieces)} chunks")
+        print(f"{doc['id']}: {len(pieces)} chunks ({strategy})")
 
     with CHUNKS_JSONL.open("w", encoding="utf-8") as f:
         for row in out:
