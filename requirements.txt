@@ -1,0 +1,10 @@
+pymupdf
+trafilatura
+sentence-transformers
+qdrant-client
+rank_bm25
+ollama
+fastapi
+uvicorn[standard]
+streamlit
+requests
