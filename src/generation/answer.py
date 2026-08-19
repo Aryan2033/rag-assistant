@@ -33,7 +33,7 @@ def answer(query: str, top_k: int = 5) -> tuple[str, list[dict]]:
     # --- Stage 1: try the knowledge graph (exact, structured facts) ---
     kg_hit = kg_lookup(query)
     if kg_hit:
-        reply = f"{kg_hit['answer']} [KG]"
+        reply = kg_hit["answer"]
         source = {
             "chunk_uid": "kg",
             "score": 1.0,
