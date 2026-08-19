@@ -1,24 +1,21 @@
 """
-app.py — Hugging Face Spaces entry point.
-Self-contained: builds the index in-memory at startup, then serves the Streamlit UI.
-Uses Gemini for generation (GEMINI_API_KEY set as a Space secret).
-No Docker, no separate API server — one process.
+app.py — Hugging Face Spaces entry point (Gradio).
+Self-contained: builds the index in-memory at startup, serves a Gradio UI.
+Uses Gemini for generation (GEMINI_API_KEY set as a Space secret). No Docker, one process.
 """
 import os
-os.environ["QDRANT_IN_MEMORY"] = "1"   # force in-memory Qdrant for the cloud
+os.environ["QDRANT_IN_MEMORY"] = "1"
 
 import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import json
-import streamlit as st
+import gradio as gr
 
-from src.config import CHUNKS_JSONL, KG_JSON, EMBED_MODEL, EMBED_DIM, COLLECTION
+from src.config import CHUNKS_JSONL, EMBED_MODEL, EMBED_DIM, COLLECTION
 
 
-# ---------- one-time startup: build the in-memory index ----------
-@st.cache_resource(show_spinner="Loading models and building the index...")
 def bootstrap():
     from qdrant_client import QdrantClient
     from qdrant_client.models import Distance, VectorParams, PointStruct
@@ -44,72 +41,92 @@ def bootstrap():
     return client
 
 
-# Build once, share the client with the retrieval layer
+print("Building index at startup...")
 _client = bootstrap()
-
-# Inject the pre-built in-memory client into the dense retriever
 import src.retrieval.dense as dense
 dense._shared_client = _client
-
 from src.generation.answer import answer
+print("Ready.")
 
 
 def friendly_source(raw: str):
     s = raw.lower()
     if "examination" in s or "studies and" in s or "regulation" in s:
-        return ("Exam Regulations (SPO)", "📕")
+        return "📕 Exam Regulations (SPO)"
     if "handbook" in s:
-        return ("Module Handbook", "📗")
-    return (raw, "📄")
+        return "📗 Module Handbook"
+    return f"📄 {raw}"
 
 
-# ---------- UI ----------
-st.set_page_config(page_title="Aalen Student Assistant", page_icon="🎓", layout="centered")
-st.title("🎓 Aalen MLD Student Assistant")
-st.caption(
-    "Grounded answers over the HS Aalen module handbook **and** exam regulations (SPO). "
-    "Answers come only from these documents — it says so when it doesn't know."
-)
+def ask(question: str):
+    if not question or not question.strip():
+        return "Please enter a question.", "", ""
+    reply, sources = answer(question)
+    method = "knowledge_graph" if sources and sources[0].get("chunk_uid") == "kg" else "rag"
+    doc = friendly_source(sources[0]["source"]) if sources else "—"
+    how = "✅ Knowledge graph (exact fact)" if method == "knowledge_graph" else "🔎 Retrieval (RAG)"
+    meta = f"**Source document:** {doc}  ·  **How:** {how}"
+    src_md = ""
+    for i, s in enumerate(sources, 1):
+        src_md += f"**[{i}] {friendly_source(s['source'])}**  ·  relevance {round(float(s['score']), 3)}\n\n"
+        src_md += f"> {s['text'][:220]}\n\n"
+    return reply, meta, src_md
 
-examples = [
+
+EXAMPLES = [
     "Who teaches Natural Language Processing?",
     "How many times can I retake a failed exam?",
     "How many credits is the Projekt module?",
     "How long do I have to write the Master's thesis?",
+    "What happens if I miss an exam without withdrawing?",
+    "Who do I contact about my student visa?",
 ]
-cols = st.columns(2)
-for i, ex in enumerate(examples):
-    if cols[i % 2].button(ex, use_container_width=True):
-        st.session_state["question"] = ex
 
-question = st.text_input("Your question", value=st.session_state.get("question", ""),
-                         placeholder="e.g. What happens if I miss an exam without withdrawing?")
+CUSTOM_CSS = """
+.gradio-container {max-width: 880px !important; margin: auto !important;}
+#hero {text-align:center; padding: 18px 0 6px 0;}
+#hero h1 {font-size: 2rem; margin-bottom: 4px;}
+#hero p {color: #6b7280; font-size: 0.98rem; margin: 0;}
+#answer-box {background: #f8fafc; border: 1px solid #e5e7eb; border-radius: 12px;
+             padding: 18px 20px; min-height: 60px; font-size: 1.05rem;}
+#meta-box {font-size: 0.9rem; color: #374151; padding-top: 6px;}
+.footer-note {text-align:center; color:#9ca3af; font-size:0.8rem; padding-top:10px;}
+"""
 
-if st.button("Ask", type="primary") and question.strip():
-    with st.spinner("Searching the documents..."):
-        reply, sources = answer(question)
+HERO = """
+<div id="hero">
+  <h1>🎓 Aalen Student Assistant</h1>
+  <p>Grounded Q&amp;A over the HS Aalen module handbook &amp; exam regulations (SPO).
+     Every answer is drawn only from these documents — it says so when it doesn't know.</p>
+</div>
+"""
 
-    st.markdown("### Answer")
-    st.write(reply)
+with gr.Blocks(title="Aalen Student Assistant") as demo:
+    gr.HTML(HERO)
 
-    method = "knowledge_graph" if sources and sources[0].get("chunk_uid") == "kg" else "rag"
-    if sources:
-        name, icon = friendly_source(sources[0]["source"])
-        doc_label = f"{icon} {name}"
-    else:
-        doc_label = "—"
+    with gr.Row():
+        question = gr.Textbox(
+            label="", scale=5, container=False,
+            placeholder="Ask about modules, credits, professors, exams, thesis rules…",
+        )
+        ask_btn = gr.Button("Ask", variant="primary", scale=1, min_width=110)
 
-    c1, c2 = st.columns(2)
-    c1.markdown(f"**Source document:** {doc_label}")
-    c2.markdown("**How:** ✅ Knowledge graph" if method == "knowledge_graph"
-                else "**How:** 🔎 Retrieval (RAG)")
+    gr.Examples(examples=EXAMPLES, inputs=question, label="Try one of these")
 
-    if sources:
-        with st.expander(f"View sources ({len(sources)})"):
-            for i, s in enumerate(sources, 1):
-                name, icon = friendly_source(s["source"])
-                st.markdown(f"**[{i}] {icon} {name}**  ·  relevance {round(float(s['score']), 3)}")
-                st.caption(s["text"][:200])
+    gr.Markdown("### Answer")
+    answer_out = gr.Markdown(elem_id="answer-box")
+    meta_out = gr.Markdown(elem_id="meta-box")
 
-st.divider()
-st.caption("Module Handbook + Exam Regulations (SPO) · hybrid retrieval · reranking · knowledge-graph grounding")
+    with gr.Accordion("📄 View sources", open=False):
+        sources_out = gr.Markdown()
+
+    gr.HTML(
+        '<div class="footer-note">Module Handbook + Exam Regulations (SPO) · '
+        'hybrid retrieval (BM25 + dense) · cross-encoder reranking · knowledge-graph grounding</div>'
+    )
+
+    ask_btn.click(ask, inputs=question, outputs=[answer_out, meta_out, sources_out])
+    question.submit(ask, inputs=question, outputs=[answer_out, meta_out, sources_out])
+
+if __name__ == "__main__":
+    demo.launch(theme=gr.themes.Soft(primary_hue="blue"), css=CUSTOM_CSS)
