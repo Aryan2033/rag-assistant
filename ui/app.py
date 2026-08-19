@@ -1,28 +1,40 @@
 """
-ui/app.py — Session 23
-Streamlit front-end. Calls the FastAPI backend over HTTP and renders
-the answer, which path (KG vs RAG) answered, and the source citations.
+ui/app.py — Session B1
+Streamlit front-end for the multi-document RAG assistant.
+Shows the answer, which DOCUMENT it came from, whether the KG or RAG answered,
+and expandable source citations.
 """
 import requests
 import streamlit as st
 
 API_URL = "http://127.0.0.1:8000/query"
 
-st.set_page_config(page_title="Aalen MLD Study Assistant", page_icon="🎓", layout="centered")
+st.set_page_config(page_title="Aalen Student Assistant", page_icon="🎓", layout="centered")
 
-st.title("🎓 MLD Module Handbook Assistant")
+
+def friendly_source(raw: str) -> tuple[str, str]:
+    """Map a raw filename to a clean display name and an icon."""
+    s = raw.lower()
+    if "examination" in s or "studies and" in s or "regulation" in s:
+        return ("Exam Regulations (SPO)", "📕")
+    if "handbook" in s:
+        return ("Module Handbook", "📗")
+    return (raw, "📄")
+
+
+st.title("🎓 Aalen MLD Student Assistant")
 st.caption(
-    "Grounded question-answering over the HS Aalen Master's module handbook. "
-    "Answers come only from the document — the assistant says so when it doesn't know."
+    "Grounded answers over the HS Aalen module handbook **and** the exam regulations (SPO). "
+    "Every answer is drawn only from these documents — the assistant says so when it doesn't know."
 )
 
-# A few example questions users can click
+# Example questions — deliberately spanning BOTH documents to show multi-source
 st.markdown("**Try asking:**")
 examples = [
-    "Who teaches Natural Language Processing?",
-    "How many credits is the Projekt module?",
-    "What is the exam format for Big Data & Data Mining?",
-    "What topics does Machine Learning and Deep Learning cover?",
+    "Who teaches Natural Language Processing?",          # handbook / KG
+    "How many times can I retake a failed exam?",        # SPO
+    "How many credits is the Projekt module?",           # handbook / KG
+    "How long do I have to write the Master's thesis?",  # SPO
 ]
 cols = st.columns(2)
 for i, ex in enumerate(examples):
@@ -32,34 +44,53 @@ for i, ex in enumerate(examples):
 question = st.text_input(
     "Your question",
     value=st.session_state.get("question", ""),
-    placeholder="e.g. Who is the module manager for Data Analytics?",
+    placeholder="e.g. What happens if I miss an exam without withdrawing?",
 )
 
 if st.button("Ask", type="primary") and question.strip():
-    with st.spinner("Thinking..."):
+    with st.spinner("Searching the documents..."):
         try:
-            resp = requests.post(API_URL, json={"question": question}, timeout=60)
+            resp = requests.post(API_URL, json={"question": question}, timeout=120)
             resp.raise_for_status()
             data = resp.json()
         except requests.exceptions.RequestException as e:
             st.error(f"Could not reach the API. Is the backend running on port 8000?\n\n{e}")
             st.stop()
 
-    # Answer
+    # --- Answer ---
     st.markdown("### Answer")
     st.write(data["answer"])
 
-    # Which path answered — makes the KG work visible
-    if data["method"] == "knowledge_graph":
-        st.success("✅ Answered from the **knowledge graph** (exact structured fact)")
-    else:
-        st.info("🔎 Answered via **retrieval** (RAG over document chunks)")
+    # --- Provenance row: which document + which method ---
+    sources = data.get("sources", [])
+    method = data.get("method", "rag")
 
-    # Sources
-    with st.expander(f"Sources ({len(data['sources'])})"):
-        for i, s in enumerate(data["sources"], 1):
-            st.markdown(f"**[{i}]** {s['source']}  ·  score {s['score']}")
-            st.caption(s["snippet"])
+    # Determine the primary source document from the top source
+    if sources:
+        name, icon = friendly_source(sources[0]["source"])
+        doc_label = f"{icon} {name}"
+    else:
+        doc_label = "—"
+
+    col_a, col_b = st.columns(2)
+    with col_a:
+        st.markdown(f"**Source document:** {doc_label}")
+    with col_b:
+        if method == "knowledge_graph":
+            st.markdown("**How:** ✅ Knowledge graph (exact fact)")
+        else:
+            st.markdown("**How:** 🔎 Retrieval (RAG)")
+
+    # --- Expandable detailed sources ---
+    if sources:
+        with st.expander(f"View sources ({len(sources)})"):
+            for i, s in enumerate(sources, 1):
+                name, icon = friendly_source(s["source"])
+                st.markdown(f"**[{i}] {icon} {name}**  ·  relevance {s['score']}")
+                st.caption(s["snippet"])
 
 st.divider()
-st.caption("Built with hybrid retrieval (BM25 + dense) · cross-encoder reranking · knowledge-graph grounding")
+st.caption(
+    "Corpus: Module Handbook + Exam Regulations (SPO)  ·  "
+    "Hybrid retrieval (BM25 + dense) · cross-encoder reranking · knowledge-graph grounding"
+)
