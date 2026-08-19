@@ -8,6 +8,9 @@ DOCUMENTS_JSONL = PROCESSED_DIR / "documents.jsonl"
 CHUNKS_JSONL = PROCESSED_DIR / "chunks.jsonl"
 
 # Qdrant (your Docker container)
+import os
+# Cloud/Spaces: use in-memory Qdrant (no Docker). Local: use the Docker container.
+QDRANT_IN_MEMORY = bool(os.environ.get("QDRANT_IN_MEMORY"))
 QDRANT_URL = "http://localhost:6333"
 COLLECTION = "student_docs"
 

@@ -26,7 +26,7 @@ def _get_model() -> SentenceTransformer:
 def search(query: str, top_k: int = 5) -> list[dict]:
     model = _get_model()
     vec = model.encode(f"query: {query}", normalize_embeddings=True).tolist()
-    client = QdrantClient(url=QDRANT_URL)
+    client = globals().get("_shared_client") or QdrantClient(url=QDRANT_URL)
     hits = client.query_points(COLLECTION, query=vec, limit=top_k).points
     return [
         {"chunk_uid": h.id, "score": h.score,

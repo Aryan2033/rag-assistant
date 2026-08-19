@@ -1,27 +1,47 @@
 """
-src/generation/llm.py — Session 3
-Thin wrapper around Ollama so the rest of the code doesn't care which LLM we use.
-Swap LLM_MODEL (or this function) later to use an API instead — nothing else changes.
+src/generation/llm.py
+Swappable LLM backend. Uses Gemini if GEMINI_API_KEY is set (cloud/deploy),
+otherwise falls back to local Ollama (development). The rest of the codebase
+calls generate() and doesn't care which backend answers.
 """
 from __future__ import annotations
 
+import os
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from src.config import LLM_MODEL
 
-import ollama
+_USE_GEMINI = bool(os.environ.get("GEMINI_API_KEY"))
+
+if _USE_GEMINI:
+    import google.generativeai as genai
+    genai.configure(api_key=os.environ["GEMINI_API_KEY"])
+    GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-flash-latest")
+else:
+    import ollama
 
 
 def generate(prompt: str, system: str | None = None) -> str:
-    messages = []
-    if system:
-        messages.append({"role": "system", "content": system})
-    messages.append({"role": "user", "content": prompt})
-    response = ollama.chat(
-        model=LLM_MODEL,
-        messages=messages,
-        options={"temperature": 0},  # deterministic: same input -> same answer
-    )
-    return response["message"]["content"]
+    if _USE_GEMINI:
+        # Gemini: fold the system instruction into the model config
+        model = genai.GenerativeModel(
+            GEMINI_MODEL,
+            system_instruction=system,
+            generation_config={"temperature": 0},
+        )
+        resp = model.generate_content(prompt)
+        return resp.text.strip()
+    else:
+        # Local Ollama
+        messages = []
+        if system:
+            messages.append({"role": "system", "content": system})
+        messages.append({"role": "user", "content": prompt})
+        resp = ollama.chat(
+            model=LLM_MODEL,
+            messages=messages,
+            options={"temperature": 0},
+        )
+        return resp["message"]["content"]
