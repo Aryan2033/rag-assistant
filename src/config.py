@@ -20,7 +20,7 @@ WORDS_PER_CHUNK = 150   # was 350 — smaller so a chunk stays within one module
 CHUNK_OVERLAP = 30      # was 50
 
 # LLM (local, via Ollama)
-LLM_MODEL = "llama3.2"
+LLM_MODEL = "qwen2.5:7b"
 
 # Reranker (cross-encoder)
 RERANK_MODEL = "BAAI/bge-reranker-v2-m3"  # multilingual, matches your e5 choice

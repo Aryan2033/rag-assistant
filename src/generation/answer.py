@@ -13,12 +13,12 @@ from src.generation.llm import generate
 from src.kg.kg_lookup import kg_lookup
 
 SYSTEM = (
-    "You are a helpful assistant for international students at Aalen University. "
-    "Answer the question using ONLY the provided context. "
-    "If the answer is not in the context, say you don't have that information — "
-    "do not guess or use outside knowledge. "
-    "Cite the source number in square brackets, e.g. [1], after facts you use. "
-    "Keep the answer concise."
+    "You answer questions for Aalen University students using ONLY the provided context.\n"
+    "- If the context directly answers the question, give a concise answer and cite the "
+    "source number like [1].\n"
+    "- If the context does not clearly answer the specific question asked, reply exactly: "
+    "\"I don't have that information in the available documents.\"\n"
+    "- Do not use outside knowledge or guess."
 )
 
 

@@ -35,15 +35,29 @@ def chunk_spo_text(text: str) -> list[str]:
             sections.append(body)
 
     # Sub-split any section that is too long for the embedding model
+        # Sub-split each section into its numbered clauses (1), (2), (3), ... so each
+    # chunk is a small, focused rule — sharper embeddings, better retrieval.
+    # The § header is prefixed onto every clause so it keeps its section context.
     chunks = []
     for sec in sections:
-        words = sec.split()
-        if len(words) <= MAX_WORDS:
-            chunks.append(sec)
-        else:
-            header = sec.split("\n", 1)[0]
-            for j in range(0, len(words), MAX_WORDS):
-                piece = " ".join(words[j:j + MAX_WORDS])
-                # repeat the section header on each sub-piece so context isn't lost
-                chunks.append(piece if j == 0 else f"{header} (cont.) {piece}")
+        m = re.match(r"(§\s*\d+[a-z]?\s+[^(§]{0,60})", sec)
+        head = m.group(1).strip() if m else sec[:40]
+
+        parts = re.split(r"(?=\(\d+\)\s)", sec)   # split at "(1) ", "(2) ", ...
+        clause_chunks = []
+        for p in parts:
+            p = p.strip()
+            if len(p.split()) < 5:
+                continue
+            # prefix the section header so a bare clause still carries its context
+            clause_chunks.append(p if p.startswith(head[:12]) else f"{head}: {p}")
+
+        # if a clause is still very long, fall back to word-window splitting on it
+        for c in (clause_chunks or [sec]):
+            words = c.split()
+            if len(words) <= MAX_WORDS:
+                chunks.append(c)
+            else:
+                for j in range(0, len(words), MAX_WORDS):
+                    chunks.append(" ".join(words[j:j + MAX_WORDS]))
     return chunks
