@@ -94,19 +94,18 @@ CUSTOM_CSS = """
 .gradio-container {max-width: 880px !important; margin: auto !important;}
 #hero {text-align:center; padding: 18px 0 6px 0;}
 #hero h1 {font-size: 2rem; margin-bottom: 4px;}
-#hero p {color: #6b7280; font-size: 0.98rem; margin: 0;}
-#answer-box {background: #f8fafc; border: 1px solid #e5e7eb; border-radius: 12px;
-             padding: 18px 20px; min-height: 60px; font-size: 1.05rem;}
-#meta-box {font-size: 0.9rem; color: #374151; padding-top: 6px;}
-.footer-note {text-align:center; color:#9ca3af; font-size:0.8rem; padding-top:10px;}
-"""
-
-HERO = """
-<div id="hero">
-  <h1>🎓 Aalen Student Assistant</h1>
-  <p>Grounded Q&amp;A over the HS Aalen module handbook &amp; exam regulations (SPO).
-     Every answer is drawn only from these documents — it says so when it doesn't know.</p>
-</div>
+#hero p {color: var(--body-text-color-subdued); font-size: 0.98rem; margin: 0;}
+#answer-box {
+    background: var(--block-background-fill);
+    color: var(--body-text-color);
+    border: 1px solid var(--border-color-primary);
+    border-radius: 12px;
+    padding: 18px 20px;
+    min-height: 60px;
+    font-size: 1.05rem;
+}
+#meta-box {font-size: 0.9rem; color: var(--body-text-color-subdued); padding-top: 6px;}
+.footer-note {text-align:center; color: var(--body-text-color-subdued); font-size:0.8rem; padding-top:10px;}
 """
 
 with gr.Blocks(title="Aalen Student Assistant") as demo:
