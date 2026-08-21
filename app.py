@@ -107,7 +107,13 @@ CUSTOM_CSS = """
 #meta-box {font-size: 0.9rem; color: var(--body-text-color-subdued); padding-top: 6px;}
 .footer-note {text-align:center; color: var(--body-text-color-subdued); font-size:0.8rem; padding-top:10px;}
 """
-
+HERO = """
+<div id="hero">
+  <h1>🎓 Aalen Student Assistant</h1>
+  <p>Grounded Q&amp;A over the HS Aalen module handbook &amp; exam regulations (SPO).
+     Every answer is drawn only from these documents — it says so when it doesn't know.</p>
+</div>
+"""
 with gr.Blocks(title="Aalen Student Assistant") as demo:
     gr.HTML(HERO)
 
