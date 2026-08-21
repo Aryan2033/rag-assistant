@@ -1,3 +1,15 @@
+---
+title: Aalen Student Assistant
+emoji: 🌖
+colorFrom: purple
+colorTo: yellow
+sdk: gradio
+sdk_version: 6.24.0
+python_version: '3.12'
+app_file: app.py
+pinned: false
+license: mit
+---
 # Aalen Student Assistant  Grounded RAG over University Documents
 
 A retrieval-augmented question-answering system over Hochschule Aalen's Master's **module handbook** and **exam regulations (SPO)**. It combines hybrid retrieval, cross-encoder reranking, and a knowledge-graph layer for structured facts, and it answers questions strictly from the source documents  citing where each answer came from and refusing when the answer isn't there.
@@ -230,3 +242,4 @@ Beyond the feature list, the work shows a full engineering loop: building a work
 ---
 
 *Built by Aryan Jadhav  M.Sc. Machine Learning & Data Analytics, Hochschule Aalen.*
+
