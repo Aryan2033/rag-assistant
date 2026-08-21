@@ -4,6 +4,10 @@ Self-contained: builds the index in-memory at startup, serves a Gradio UI.
 Uses Gemini for generation (GEMINI_API_KEY set as a Space secret). No Docker, one process.
 """
 import os
+os.environ["GRADIO_WATCH_DIRS"] = ""       # disable the reload watcher that triggers the CUDA error
+import os
+
+os.environ["SPACES_ZERO_GPU"] = "false"
 os.environ["QDRANT_IN_MEMORY"] = "1"
 
 import sys
@@ -129,4 +133,9 @@ with gr.Blocks(title="Aalen Student Assistant") as demo:
     question.submit(ask, inputs=question, outputs=[answer_out, meta_out, sources_out])
 
 if __name__ == "__main__":
-    demo.launch(theme=gr.themes.Soft(primary_hue="blue"), css=CUSTOM_CSS)
+    demo.launch(
+        theme=gr.themes.Soft(primary_hue="blue"),
+        css=CUSTOM_CSS,
+        server_name="0.0.0.0",
+        server_port=7860,
+    )
