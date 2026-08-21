@@ -4,11 +4,10 @@ Self-contained: builds the index in-memory at startup, serves a Gradio UI.
 Uses Gemini for generation (GEMINI_API_KEY set as a Space secret). No Docker, one process.
 """
 import os
-os.environ["GRADIO_WATCH_DIRS"] = ""       # disable the reload watcher that triggers the CUDA error
-import os
-
-os.environ["SPACES_ZERO_GPU"] = "false"
 os.environ["QDRANT_IN_MEMORY"] = "1"
+os.environ["GRADIO_WATCH_DIRS"] = ""
+
+import spaces   # must be imported before torch/CUDA packages (ZeroGPU requirement)
 
 import sys
 from pathlib import Path
@@ -61,6 +60,11 @@ def friendly_source(raw: str):
         return "📗 Module Handbook"
     return f"📄 {raw}"
 
+
+@spaces.GPU
+def _gpu_warmup():
+    """Satisfies ZeroGPU's requirement for a GPU-decorated function."""
+    return True
 
 def ask(question: str):
     if not question or not question.strip():
