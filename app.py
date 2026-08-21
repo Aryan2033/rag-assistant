@@ -7,7 +7,16 @@ import os
 os.environ["QDRANT_IN_MEMORY"] = "1"
 os.environ["GRADIO_WATCH_DIRS"] = ""
 
-import spaces   # must be imported before torch/CUDA packages (ZeroGPU requirement)
+try:
+    import spaces   # available on HF ZeroGPU; not installed locally
+except ImportError:
+    class _SpacesStub:
+        def GPU(self, *args, **kwargs):
+            # no-op decorator so @spaces.GPU works locally too
+            def wrap(fn):
+                return fn
+            return wrap
+    spaces = _SpacesStub() # must be imported before torch/CUDA packages (ZeroGPU requirement)
 
 import sys
 from pathlib import Path

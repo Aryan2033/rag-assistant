@@ -24,24 +24,30 @@ else:
 
 
 def generate(prompt: str, system: str | None = None) -> str:
-    if _USE_GEMINI:
-        # Gemini: fold the system instruction into the model config
-        model = genai.GenerativeModel(
-            GEMINI_MODEL,
-            system_instruction=system,
-            generation_config={"temperature": 0},
-        )
-        resp = model.generate_content(prompt)
-        return resp.text.strip()
-    else:
-        # Local Ollama
-        messages = []
-        if system:
-            messages.append({"role": "system", "content": system})
-        messages.append({"role": "user", "content": prompt})
-        resp = ollama.chat(
-            model=LLM_MODEL,
-            messages=messages,
-            options={"temperature": 0},
-        )
-        return resp["message"]["content"]
+        if _USE_GEMINI:
+            try:
+                model = genai.GenerativeModel(
+                    GEMINI_MODEL,
+                    system_instruction=system,
+                    generation_config={"temperature": 0},
+                )
+                resp = model.generate_content(prompt)
+                # Gemini can return no text if it blocks/declines — handle gracefully
+                if not getattr(resp, "text", None):
+                    return "I don't have that information in the available documents."
+                return resp.text.strip()
+            except Exception as e:
+                # Rate limits, transient API errors, etc. — don't crash the app
+                return f"(The assistant is temporarily unavailable — please try again in a moment.)"
+        else:
+            # Local Ollama
+            messages = []
+            if system:
+                messages.append({"role": "system", "content": system})
+            messages.append({"role": "user", "content": prompt})
+            resp = ollama.chat(
+                model=LLM_MODEL,
+                messages=messages,
+                options={"temperature": 0},
+            )
+            return resp["message"]["content"]
