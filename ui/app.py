@@ -1,96 +1,136 @@
 """
-ui/app.py — Session B1
-Streamlit front-end for the multi-document RAG assistant.
-Shows the answer, which DOCUMENT it came from, whether the KG or RAG answered,
-and expandable source citations.
+app.py — Hugging Face Spaces entry point (Gradio).
+Self-contained: builds the index in-memory at startup, serves a Gradio UI.
+Uses Gemini for generation (GEMINI_API_KEY set as a Space secret). No Docker, one process.
 """
-import requests
-import streamlit as st
+import os
+os.environ["QDRANT_IN_MEMORY"] = "1"
 
-API_URL = "http://127.0.0.1:8000/query"
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-st.set_page_config(page_title="Aalen Student Assistant", page_icon="🎓", layout="centered")
+import json
+import gradio as gr
+
+from src.config import CHUNKS_JSONL, EMBED_MODEL, EMBED_DIM, COLLECTION
 
 
-def friendly_source(raw: str) -> tuple[str, str]:
-    """Map a raw filename to a clean display name and an icon."""
+# ---------- one-time startup: build the in-memory index ----------
+def bootstrap():
+    from qdrant_client import QdrantClient
+    from qdrant_client.models import Distance, VectorParams, PointStruct
+    from sentence_transformers import SentenceTransformer
+
+    model = SentenceTransformer(EMBED_MODEL)
+    chunks = [json.loads(l) for l in CHUNKS_JSONL.read_text(encoding="utf-8").splitlines()]
+
+    client = QdrantClient(":memory:")
+    client.create_collection(
+        COLLECTION, vectors_config=VectorParams(size=EMBED_DIM, distance=Distance.COSINE)
+    )
+    vecs = model.encode(
+        [f"passage: {c['text']}" for c in chunks],
+        batch_size=32, normalize_embeddings=True, show_progress_bar=False,
+    )
+    client.upsert(COLLECTION, points=[
+        PointStruct(id=c["chunk_uid"], vector=vecs[i].tolist(), payload={
+            "text": c["text"], "doc_id": c["doc_id"],
+            "source": c["source"], "chunk_index": c["chunk_index"],
+        }) for i, c in enumerate(chunks)
+    ])
+    return client
+
+
+print("Building index at startup...")
+_client = bootstrap()
+import src.retrieval.dense as dense
+dense._shared_client = _client
+from src.generation.answer import answer
+print("Ready.")
+
+
+def friendly_source(raw: str):
     s = raw.lower()
     if "examination" in s or "studies and" in s or "regulation" in s:
-        return ("Exam Regulations (SPO)", "📕")
+        return "📕 Exam Regulations (SPO)"
     if "handbook" in s:
-        return ("Module Handbook", "📗")
-    return (raw, "📄")
+        return "📗 Module Handbook"
+    return f"📄 {raw}"
 
 
-st.title("🎓 Aalen MLD Student Assistant")
-st.caption(
-    "Grounded answers over the HS Aalen module handbook **and** the exam regulations (SPO). "
-    "Every answer is drawn only from these documents — the assistant says so when it doesn't know."
-)
+def ask(question: str):
+    if not question or not question.strip():
+        return "Please enter a question.", "", ""
+    reply, sources = answer(question)
 
-# Example questions — deliberately spanning BOTH documents to show multi-source
-st.markdown("**Try asking:**")
-examples = [
-    "Who teaches Natural Language Processing?",          # handbook / KG
-    "How many times can I retake a failed exam?",        # SPO
-    "How many credits is the Projekt module?",           # handbook / KG
-    "How long do I have to write the Master's thesis?",  # SPO
+    method = "knowledge_graph" if sources and sources[0].get("chunk_uid") == "kg" else "rag"
+    doc = friendly_source(sources[0]["source"]) if sources else "—"
+    how = "✅ Knowledge graph (exact fact)" if method == "knowledge_graph" else "🔎 Retrieval (RAG)"
+    meta = f"**Source document:** {doc}  ·  **How:** {how}"
+
+    src_md = ""
+    for i, s in enumerate(sources, 1):
+        src_md += f"**[{i}] {friendly_source(s['source'])}**  ·  relevance {round(float(s['score']), 3)}\n\n"
+        src_md += f"> {s['text'][:220]}\n\n"
+
+    return reply, meta, src_md
+
+
+EXAMPLES = [
+    "Who teaches Natural Language Processing?",
+    "How many times can I retake a failed exam?",
+    "How many credits is the Projekt module?",
+    "How long do I have to write the Master's thesis?",
+    "What happens if I miss an exam without withdrawing?",
+    "Who do I contact about my student visa?",
 ]
-cols = st.columns(2)
-for i, ex in enumerate(examples):
-    if cols[i % 2].button(ex, use_container_width=True):
-        st.session_state["question"] = ex
 
-question = st.text_input(
-    "Your question",
-    value=st.session_state.get("question", ""),
-    placeholder="e.g. What happens if I miss an exam without withdrawing?",
-)
+CUSTOM_CSS = """
+.gradio-container {max-width: 880px !important; margin: auto !important;}
+#hero {text-align:center; padding: 18px 0 6px 0;}
+#hero h1 {font-size: 2rem; margin-bottom: 4px;}
+#hero p {color: #6b7280; font-size: 0.98rem; margin: 0;}
+#answer-box {background: #f8fafc; border: 1px solid #e5e7eb; border-radius: 12px;
+             padding: 18px 20px; min-height: 60px; font-size: 1.05rem;}
+#meta-box {font-size: 0.9rem; color: #374151; padding-top: 6px;}
+.footer-note {text-align:center; color:#9ca3af; font-size:0.8rem; padding-top:10px;}
+"""
 
-if st.button("Ask", type="primary") and question.strip():
-    with st.spinner("Searching the documents..."):
-        try:
-            resp = requests.post(API_URL, json={"question": question}, timeout=120)
-            resp.raise_for_status()
-            data = resp.json()
-        except requests.exceptions.RequestException as e:
-            st.error(f"Could not reach the API. Is the backend running on port 8000?\n\n{e}")
-            st.stop()
+HERO = """
+<div id="hero">
+  <h1>🎓 Aalen Student Assistant</h1>
+  <p>Grounded Q&A over the HS Aalen module handbook &amp; exam regulations (SPO).
+     Every answer is drawn only from these documents — it says so when it doesn't know.</p>
+</div>
+"""
 
-    # --- Answer ---
-    st.markdown("### Answer")
-    st.write(data["answer"])
+with gr.Blocks(title="Aalen Student Assistant") as demo:
+    gr.HTML(HERO)
 
-    # --- Provenance row: which document + which method ---
-    sources = data.get("sources", [])
-    method = data.get("method", "rag")
+    with gr.Row():
+        question = gr.Textbox(
+            label="", scale=5, container=False,
+            placeholder="Ask about modules, credits, professors, exams, thesis rules…",
+        )
+        ask_btn = gr.Button("Ask", variant="primary", scale=1, min_width=110)
 
-    # Determine the primary source document from the top source
-    if sources:
-        name, icon = friendly_source(sources[0]["source"])
-        doc_label = f"{icon} {name}"
-    else:
-        doc_label = "—"
+    gr.Examples(examples=EXAMPLES, inputs=question, label="Try one of these")
 
-    col_a, col_b = st.columns(2)
-    with col_a:
-        st.markdown(f"**Source document:** {doc_label}")
-    with col_b:
-        if method == "knowledge_graph":
-            st.markdown("**How:** ✅ Knowledge graph (exact fact)")
-        else:
-            st.markdown("**How:** 🔎 Retrieval (RAG)")
+    gr.Markdown("### Answer")
+    answer_out = gr.Markdown(elem_id="answer-box")
+    meta_out = gr.Markdown(elem_id="meta-box")
 
-    # --- Expandable detailed sources ---
-    if sources:
-        with st.expander(f"View sources ({len(sources)})"):
-            for i, s in enumerate(sources, 1):
-                name, icon = friendly_source(s["source"])
-                st.markdown(f"**[{i}] {icon} {name}**  ·  relevance {s['score']}")
-                st.caption(s["snippet"])
+    with gr.Accordion("📄 View sources", open=False):
+        sources_out = gr.Markdown()
 
-st.divider()
-st.caption(
-    "Corpus: Module Handbook + Exam Regulations (SPO)  ·  "
-    "Hybrid retrieval (BM25 + dense) · cross-encoder reranking · knowledge-graph grounding"
-)
+    gr.HTML(
+        '<div class="footer-note">Module Handbook + Exam Regulations (SPO) · '
+        'hybrid retrieval (BM25 + dense) · cross-encoder reranking · knowledge-graph grounding</div>'
+    )
+
+    ask_btn.click(ask, inputs=question, outputs=[answer_out, meta_out, sources_out])
+    question.submit(ask, inputs=question, outputs=[answer_out, meta_out, sources_out])
+
+if __name__ == "__main__":
+    demo.launch(theme=gr.themes.Soft(primary_hue="blue"), css=CUSTOM_CSS)
