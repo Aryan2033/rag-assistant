@@ -4,6 +4,7 @@ Self-contained: builds the index in-memory at startup, serves a Gradio UI.
 Uses Gemini for generation (GEMINI_API_KEY set as a Space secret). No Docker, one process.
 """
 import os
+os.environ["CUDA_VISIBLE_DEVICES"] = ""     # force CPU: hide GPU so torch never inits CUDA
 os.environ["QDRANT_IN_MEMORY"] = "1"
 os.environ["GRADIO_WATCH_DIRS"] = ""
 
@@ -33,7 +34,7 @@ def bootstrap():
     from qdrant_client.models import Distance, VectorParams, PointStruct
     from sentence_transformers import SentenceTransformer
 
-    model = SentenceTransformer(EMBED_MODEL)
+    model = SentenceTransformer(EMBED_MODEL, device="cpu")
     chunks = [json.loads(l) for l in CHUNKS_JSONL.read_text(encoding="utf-8").splitlines()]
 
     client = QdrantClient(":memory:")

@@ -19,7 +19,7 @@ _model = None
 def _get_model() -> SentenceTransformer:
     global _model
     if _model is None:
-        _model = SentenceTransformer(EMBED_MODEL)
+        _model = SentenceTransformer(EMBED_MODEL, device="cpu")
     return _model
 
 
